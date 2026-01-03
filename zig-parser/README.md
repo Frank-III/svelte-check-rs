@@ -54,7 +54,7 @@ zig-parser/
 
 ## Building
 
-Requires Zig 0.14.0+
+Requires Zig 0.15.1+
 
 ```bash
 # Install Zig (macOS)
