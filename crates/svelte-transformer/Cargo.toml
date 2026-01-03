@@ -9,6 +9,7 @@ description = "Svelte to TSX transformation for type-checking"
 [dependencies]
 source-map.workspace = true
 svelte-parser.workspace = true
+svelte-oxc.workspace = true
 smol_str.workspace = true
 thiserror.workspace = true
 

@@ -2098,6 +2098,7 @@ dependencies = [
  "pretty_assertions",
  "smol_str",
  "source-map",
+ "svelte-oxc",
  "svelte-parser",
  "thiserror 2.0.17",
 ]

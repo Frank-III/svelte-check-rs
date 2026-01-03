@@ -40,3 +40,6 @@ pub use template::{
 };
 pub use transform::{transform, TransformOptions, TransformResult};
 pub use types::{component_name_from_path, ComponentExports};
+
+// Re-export svelte-oxc for OXC-based script parsing
+pub use svelte_oxc as oxc;
