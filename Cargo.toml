@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/source-map",
     "crates/svelte-parser",
+    "crates/svelte-oxc",
     "crates/svelte-transformer",
     "crates/svelte-diagnostics",
     "crates/tsgo-runner",
@@ -22,11 +23,24 @@ svelte-parser = { path = "crates/svelte-parser" }
 svelte-transformer = { path = "crates/svelte-transformer" }
 svelte-diagnostics = { path = "crates/svelte-diagnostics" }
 tsgo-runner = { path = "crates/tsgo-runner" }
+svelte-oxc = { path = "crates/svelte-oxc" }
 
-# Parsing
+# Parsing - Svelte template
 logos = "0.16"
 rowan = "0.16"
 text-size = "1.1"
+
+# Parsing & Transformation - JavaScript/TypeScript (OXC)
+oxc_parser = "0.49"
+oxc_ast = "0.49"
+oxc_allocator = "0.49"
+oxc_span = "0.49"
+oxc_syntax = "0.49"
+oxc_semantic = "0.49"
+oxc_codegen = "0.49"
+oxc_diagnostics = "0.49"
+
+# Legacy SWC (to be removed)
 swc_ecma_parser = "32.0"
 swc_ecma_ast = "19.0"
 swc_common = { version = "18.0", features = ["sourcemap"] }

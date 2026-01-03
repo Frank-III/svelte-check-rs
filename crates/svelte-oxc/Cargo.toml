@@ -1,0 +1,30 @@
+[package]
+name = "svelte-oxc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "OXC-based JavaScript/TypeScript parsing and transformation for Svelte"
+
+[dependencies]
+source-map.workspace = true
+svelte-parser.workspace = true
+
+# OXC crates
+oxc_parser.workspace = true
+oxc_ast.workspace = true
+oxc_allocator.workspace = true
+oxc_span.workspace = true
+oxc_syntax.workspace = true
+oxc_semantic.workspace = true
+oxc_codegen.workspace = true
+oxc_diagnostics.workspace = true
+
+# Utilities
+thiserror.workspace = true
+smol_str.workspace = true
+indexmap.workspace = true
+
+[dev-dependencies]
+insta.workspace = true
+pretty_assertions.workspace = true
