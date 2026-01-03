@@ -3387,7 +3387,7 @@ const FeatureFlags = @import("./feature_flags.zig");
 const JSIdentifier = @import("./js_lexer/identifier.zig");
 const tables = @import("./js_lexer_tables.zig");
 
-const bun = @import("bun");
+const bun = @import("bun.zig");
 const CodePoint = bun.CodePoint;
 const Environment = bun.Environment;
 const MutableString = bun.MutableString;

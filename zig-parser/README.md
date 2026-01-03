@@ -1,55 +1,22 @@
 # Zig Parser for svelte-check-rs
 
-A Zig-based JavaScript/TypeScript parser, adapted from [Bun's parser](https://github.com/oven-sh/bun).
+A Zig-based JavaScript/TypeScript parser for Svelte. Uses adapted code from Bun's parser for token definitions.
 
 ## Structure
 
 ```
 zig-parser/
-├── build.zig          # Build configuration
-├── src/
-│   ├── main.zig       # Entry point + FFI exports
-│   ├── bun.zig        # Compatibility layer for Bun's APIs
-│   ├── js_lexer.zig   # Main lexer (from Bun)
-│   ├── js_lexer_tables.zig  # Token definitions
-│   ├── logger.zig     # Logging/diagnostics
-│   ├── string.zig     # String utilities
-│   ├── defines.zig    # Defines/macros
-│   ├── options.zig    # Parser options
-│   ├── feature_flags.zig
-│   ├── import_record.zig
-│   ├── js_lexer/
-│   │   └── identifier.zig
-│   └── ast/
-│       ├── P.zig          # Main parser struct (330K lines!)
-│       ├── Parser.zig     # Parser interface
-│       ├── Expr.zig       # Expression AST
-│       ├── Stmt.zig       # Statement AST
-│       ├── E.zig          # Expression node types
-│       ├── S.zig          # Statement node types
-│       ├── B.zig          # Binding types
-│       ├── G.zig          # General types
-│       ├── Op.zig         # Operators
-│       ├── Scope.zig      # Scope handling
-│       ├── Symbol.zig     # Symbol table
-│       ├── Binding.zig    # Binding AST
-│       ├── base.zig       # Base types
-│       ├── parse.zig      # Parse entry point
-│       ├── parseStmt.zig  # Statement parsing
-│       ├── parsePrefix.zig
-│       ├── parseSuffix.zig
-│       ├── parseFn.zig
-│       ├── parseProperty.zig
-│       ├── parseImportExport.zig
-│       ├── parseJSXElement.zig
-│       ├── parseTypescript.zig
-│       ├── skipTypescript.zig
-│       ├── visit.zig      # AST visitor
-│       ├── visitExpr.zig
-│       ├── visitStmt.zig
-│       ├── visitBinaryExpression.zig
-│       ├── maybe.zig
-│       └── symbols.zig
+├── build.zig              # Build configuration
+├── build.zig.zon          # Package manifest
+└── src/
+    ├── main.zig           # Entry point + FFI exports
+    ├── lexer.zig          # JavaScript/TypeScript lexer
+    ├── ast.zig            # AST node types
+    ├── js_lexer_tables.zig # Token type definitions (from Bun)
+    ├── bun.zig            # Bun compatibility layer
+    ├── feature_flags.zig  # Feature flags
+    └── js_lexer/
+        └── identifier.zig # Unicode identifier tables (from Bun)
 ```
 
 ## Building
@@ -57,12 +24,6 @@ zig-parser/
 Requires Zig 0.15.1+
 
 ```bash
-# Install Zig (macOS)
-brew install zig
-
-# Install Zig (Linux)
-# Download from https://ziglang.org/download/
-
 # Build
 cd zig-parser
 zig build
@@ -73,25 +34,49 @@ zig build test
 
 ## Status
 
-This is a work in progress. The files are copied from Bun's parser and need adaptation:
+### Completed
+- [x] Token types (all JS/TS operators, keywords, literals)
+- [x] Lexer (tokenization with line/column tracking)
+- [x] AST node types (expressions, statements, bindings)
+- [x] FFI exports for Rust integration
 
-1. **bun.zig** - Compatibility shim created (minimal)
-2. **Lexer** - Copied, needs dependency fixes
-3. **Parser** - Copied, needs significant adaptation
-4. **AST** - Copied, needs dependency fixes
+### In Progress
+- [ ] Expression parser
+- [ ] Statement parser
 
-## Next Steps
+### Planned
+- [ ] Svelte-specific syntax:
+  - `{#if}`, `{#each}`, `{#await}`, `{#snippet}`, `{#key}`
+  - `{:else}`, `{:then}`, `{:catch}`
+  - `{@html}`, `{@debug}`, `{@const}`, `{@render}`, `{@attach}`
+  - `{expression}` interpolation
+- [ ] TypeScript type annotation parsing
+- [ ] JSX support
+- [ ] Rust FFI bindings crate
 
-1. Fix all import paths and dependencies
-2. Remove Bun-specific features (bundler, macros, etc.)
-3. Add Svelte-specific syntax:
-   - `{#if}`, `{#each}`, `{#await}`, `{#snippet}`, `{#key}`
-   - `{:else}`, `{:then}`, `{:catch}`
-   - `{@html}`, `{@debug}`, `{@const}`, `{@render}`, `{@attach}`
-   - `{expression}` interpolation
-4. Create Rust FFI bindings
-5. Integrate with svelte-check-rs
+## FFI API
+
+```zig
+// Get version string
+pub export fn svelte_parser_version() [*:0]const u8;
+
+// Tokenize source code
+pub export fn svelte_parser_tokenize(
+    source_ptr: [*]const u8,
+    source_len: usize,
+) ParseResult;
+```
+
+## Architecture
+
+The parser is designed to be:
+
+1. **Standalone** - No runtime dependencies beyond Zig's standard library
+2. **FFI-ready** - C ABI exports for calling from Rust
+3. **Fast** - Direct tokenization without intermediate representations
+
+Token types and keyword maps are adapted from Bun's parser, with a compatibility layer (`bun.zig`) providing the required utilities.
 
 ## License
 
-MIT (following Bun's license)
+MIT

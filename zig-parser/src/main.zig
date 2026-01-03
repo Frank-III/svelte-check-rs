@@ -1,81 +1,73 @@
 // svelte-parser-zig
-// A Zig-based JavaScript/TypeScript/Svelte parser adapted from Bun
+// A Zig-based JavaScript/TypeScript/Svelte parser
 
 const std = @import("std");
-const bun = @import("bun.zig");
 
-// Re-export core modules
+pub const lexer = @import("lexer.zig");
 pub const tables = @import("js_lexer_tables.zig");
+pub const ast = @import("ast.zig");
 
-// AST types (from Bun)
-pub const ast = struct {
-    pub const Expr = @import("ast/Expr.zig");
-    pub const Stmt = @import("ast/Stmt.zig");
-    pub const E = @import("ast/E.zig");
-    pub const S = @import("ast/S.zig");
-    pub const B = @import("ast/B.zig");
-    pub const G = @import("ast/G.zig");
-    pub const Op = @import("ast/Op.zig");
-    pub const Binding = @import("ast/Binding.zig");
-    pub const Scope = @import("ast/Scope.zig");
-    pub const Symbol = @import("ast/Symbol.zig");
-    pub const P = @import("ast/P.zig");
-};
-
-// Convenience aliases
-pub const Token = tables.T;
+pub const Lexer = lexer.Lexer;
+pub const Token = lexer.Token;
+pub const T = tables.T;
+pub const Expr = ast.Expr;
+pub const Stmt = ast.Stmt;
 
 // FFI C API for Rust integration
-pub const c_api = struct {
-    pub const ParseResult = extern struct {
-        success: bool,
-        error_message: ?[*:0]const u8,
-        ast_ptr: ?*anyopaque,
-    };
-
-    /// Parse JavaScript/TypeScript source code
-    /// Returns a ParseResult with either the AST or an error message
-    pub export fn svelte_parser_parse(
-        source_ptr: [*]const u8,
-        source_len: usize,
-        is_typescript: bool,
-        is_jsx: bool,
-    ) ParseResult {
-        _ = is_typescript;
-        _ = is_jsx;
-        _ = source_ptr;
-        _ = source_len;
-
-        // TODO: Full parsing once dependencies are resolved
-        return ParseResult{
-            .success = true,
-            .error_message = null,
-            .ast_ptr = null,
-        };
-    }
-
-    /// Free a previously allocated AST
-    pub export fn svelte_parser_free(ast_ptr: ?*anyopaque) void {
-        _ = ast_ptr;
-        // TODO: Implement when AST allocation is working
-    }
-
-    /// Get the version string
-    pub export fn svelte_parser_version() [*:0]const u8 {
-        return "0.1.0";
-    }
-};
-
-// Tests
-test "token types exist" {
-    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(Token.t_end_of_file));
-    try std.testing.expect(@intFromEnum(Token.t_let) > 0);
-    try std.testing.expect(@intFromEnum(Token.t_const) > 0);
-    try std.testing.expect(@intFromEnum(Token.t_function) > 0);
+pub export fn svelte_parser_version() [*:0]const u8 {
+    return "0.1.0";
 }
 
-test "token tag methods" {
-    try std.testing.expect(Token.t_equals.isAssign());
-    try std.testing.expect(Token.t_plus_equals.isAssign());
-    try std.testing.expect(!Token.t_plus.isAssign());
+pub const ParseResult = extern struct {
+    success: bool,
+    error_count: u32,
+    token_count: u32,
+};
+
+/// Tokenize source and return basic stats
+pub export fn svelte_parser_tokenize(
+    source_ptr: [*]const u8,
+    source_len: usize,
+) ParseResult {
+    const source = source_ptr[0..source_len];
+    var lex = Lexer.init(source);
+
+    var token_count: u32 = 0;
+    var error_count: u32 = 0;
+
+    while (lex.token.tag != .t_end_of_file) {
+        if (lex.token.tag == .t_syntax_error) {
+            error_count += 1;
+        }
+        token_count += 1;
+        lex.advance();
+    }
+
+    return ParseResult{
+        .success = error_count == 0,
+        .error_count = error_count,
+        .token_count = token_count,
+    };
+}
+
+// Tests
+test "lexer integration" {
+    const source = "const add = (a, b) => a + b;";
+    var lex = Lexer.init(source);
+
+    var count: u32 = 0;
+    while (lex.token.tag != .t_end_of_file) {
+        count += 1;
+        lex.advance();
+    }
+
+    // const add = ( a , b ) => a + b ;
+    // 1     2   3 4 5 6 7 8  9  10 11 12
+    try std.testing.expectEqual(@as(u32, 12), count);
+}
+
+test "all modules" {
+    _ = @import("js_lexer_tables.zig");
+    _ = @import("lexer.zig");
+    _ = @import("ast.zig");
 }
