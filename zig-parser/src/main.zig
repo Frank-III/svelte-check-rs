@@ -10,6 +10,7 @@ pub const tables = @import("js_lexer_tables.zig");
 pub const ast = @import("ast.zig");
 pub const parser = @import("parser.zig");
 pub const svelte = @import("svelte.zig");
+pub const checker = @import("checker.zig");
 
 // Type aliases for convenience
 pub const Lexer = lexer.Lexer;
@@ -20,6 +21,8 @@ pub const Stmt = ast.Stmt;
 pub const Parser = parser.Parser;
 pub const SvelteParser = svelte.SvelteParser;
 pub const SvelteFile = svelte.SvelteFile;
+pub const Checker = checker.Checker;
+pub const Diagnostic = checker.Diagnostic;
 
 // ========== FFI C API ==========
 
@@ -202,6 +205,7 @@ pub fn main() !void {
                     var svelte_parser = SvelteParser.init(arena.allocator(), source);
                     const file = svelte_parser.parse();
 
+                    // Parse errors
                     if (file.errors.len > 0) {
                         try stdout.print("{s}:\n", .{file_path});
                         for (file.errors) |err| {
@@ -210,14 +214,29 @@ pub fn main() !void {
                         }
                     }
 
-                    // Check script
-                    if (file.instance_script) |script| {
-                        var p = Parser.init(arena.allocator(), script.content);
-                        _ = p.parseProgram();
-                        if (p.errors.items.len > 0) {
-                            try stdout.print("{s} (script):\n", .{file_path});
-                            for (p.errors.items) |err| {
-                                try stdout.print("  error: {s}\n", .{err.message});
+                    // Run checker for semantic diagnostics
+                    var chk = Checker.init(arena.allocator(), source);
+                    chk.check(&file);
+
+                    const diagnostics = chk.getDiagnostics();
+                    if (diagnostics.len > 0) {
+                        var printed_header = file.errors.len > 0;
+                        for (diagnostics) |diag| {
+                            if (!printed_header) {
+                                try stdout.print("{s}:\n", .{file_path});
+                                printed_header = true;
+                            }
+                            const severity_str = switch (diag.severity) {
+                                .@"error" => "error",
+                                .warning => "warning",
+                                .hint => "hint",
+                            };
+                            try stdout.print("  {s}: {s} ({s})\n", .{
+                                severity_str,
+                                diag.message,
+                                @tagName(diag.code),
+                            });
+                            if (diag.severity == .@"error") {
                                 total_errors += 1;
                             }
                         }
@@ -291,10 +310,35 @@ test "svelte parser integration" {
     try std.testing.expect(file.template.nodes.len > 0);
 }
 
+test "checker integration" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var svelte_parser = SvelteParser.init(arena.allocator(),
+        \\<script>
+        \\  let count = 0;
+        \\</script>
+        \\<button>{count}</button>
+    );
+    const file = svelte_parser.parse();
+
+    var chk = Checker.init(arena.allocator(),
+        \\<script>
+        \\  let count = 0;
+        \\</script>
+        \\<button>{count}</button>
+    );
+    chk.check(&file);
+
+    // count is defined and used, should have no errors
+    try std.testing.expect(!chk.hasErrors());
+}
+
 test "all modules" {
     _ = @import("js_lexer_tables.zig");
     _ = @import("lexer.zig");
     _ = @import("ast.zig");
     _ = @import("parser.zig");
     _ = @import("svelte.zig");
+    _ = @import("checker.zig");
 }
