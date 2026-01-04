@@ -11,6 +11,7 @@ pub const ast = @import("ast.zig");
 pub const parser = @import("parser.zig");
 pub const svelte = @import("svelte.zig");
 pub const checker = @import("checker.zig");
+pub const css = @import("css.zig");
 
 // Type aliases for convenience
 pub const Lexer = lexer.Lexer;
@@ -23,6 +24,8 @@ pub const SvelteParser = svelte.SvelteParser;
 pub const SvelteFile = svelte.SvelteFile;
 pub const Checker = checker.Checker;
 pub const Diagnostic = checker.Diagnostic;
+pub const CssParser = css.CssParser;
+pub const Stylesheet = css.Stylesheet;
 
 // ========== FFI C API ==========
 
@@ -334,6 +337,21 @@ test "checker integration" {
     try std.testing.expect(!chk.hasErrors());
 }
 
+test "css parser integration" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var css_parser = CssParser.init(arena.allocator(),
+        \\.container {
+        \\    color: red;
+        \\    padding: 10px;
+        \\}
+    );
+    const stylesheet = css_parser.parse();
+
+    try std.testing.expectEqual(@as(usize, 1), stylesheet.rules.len);
+}
+
 test "all modules" {
     _ = @import("js_lexer_tables.zig");
     _ = @import("lexer.zig");
@@ -341,4 +359,5 @@ test "all modules" {
     _ = @import("parser.zig");
     _ = @import("svelte.zig");
     _ = @import("checker.zig");
+    _ = @import("css.zig");
 }
